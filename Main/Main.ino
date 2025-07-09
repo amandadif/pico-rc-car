@@ -2,11 +2,13 @@
 #include <WiFi.h>
 #include <Servo.h>
 #include "WebApp.h"
+#include "StepMotor.h"
 
 WebApp web;
 UltrasonicSensor distanceSensor;
 Servo servo;  // Steering
 Servo esc;      // Motor
+StepMotor stepMotor;
 
 bool pathClear;
 
@@ -31,6 +33,8 @@ void setup() {
 void loop() {
   //Listen and send commands through the web app
   pathClear = distanceSensor.getPathClearStatus();
+
+  stepMotor.moveSteps(true, 1024, 3);
   
   if(pathClear == true) {
     web.sendServoCommand(servo, esc);
