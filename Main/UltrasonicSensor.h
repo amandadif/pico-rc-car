@@ -12,7 +12,7 @@ class UltrasonicSensor {
 
   public:
     UltrasonicSensor();      // Constructor
-    float getDistance();     // Return distance in cm
+    bool getPathClearStatus();     // Return distance in cm
 };
 
 #endif

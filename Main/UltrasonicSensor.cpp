@@ -1,28 +1,38 @@
 #include <Arduino.h>
 #include "UltrasonicSensor.h"
+#include "PathStatusLED.h"
 
+PathStatusLED LEDindicator;
 UltrasonicSensor::UltrasonicSensor()
   : sonar(trigPin, echoPin, maxDistance) // initialize NewPing object
 {
   // Nothing else needed here — NewPing handles pinMode internally
 }
 
-float UltrasonicSensor::getDistance() {
+bool UltrasonicSensor::getPathClearStatus() {
+  bool pathClearStatus;
   float distance = sonar.ping_cm(); // returns distance in cm, non-blocking
 
   if (distance == 0) {
-    return -1; // or return 0 if you prefer
+    pathClearStatus = false;
+    return pathClearStatus;
   }
-  if(distance <= 30) {
+  else if(distance <= 30) {
     Serial.println("STOP");
-    return -1;
+    pathClearStatus = false;
+    LEDindicator.activateStatusLED(pathClearStatus);
+    return pathClearStatus;
+  }
+  else {
+    pathClearStatus = true;
   }
 
   Serial.print("Distance: ");
   Serial.print(distance);
   Serial.println(" cm");
 
-  return distance;
+  LEDindicator.activateStatusLED(pathClearStatus);
+  return pathClearStatus;
 }
 
 

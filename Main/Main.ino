@@ -8,6 +8,8 @@ UltrasonicSensor distanceSensor;
 Servo servo;  // Steering
 Servo esc;      // Motor
 
+bool pathClear;
+
 void setup() {
   //Allow for serial read- 115200 baud
   Serial.begin(115200);
@@ -15,7 +17,7 @@ void setup() {
   //Assign pins
   servo.attach(28);
   esc.attach(15);
-  
+
   //Connect WiFi
   web.connectToWifi();
   
@@ -28,6 +30,9 @@ void setup() {
 
 void loop() {
   //Listen and send commands through the web app
-  web.sendServoCommand(servo, esc);
-  distanceSensor.getDistance();
+  pathClear = distanceSensor.getPathClearStatus();
+  
+  if(pathClear == true) {
+    web.sendServoCommand(servo, esc);
+  }
 }
