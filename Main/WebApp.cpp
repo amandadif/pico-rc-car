@@ -2,13 +2,16 @@
 #include "WebApp.h"
 #include <Servo.h>
 
+
+#include "WebApp.h"
+#include "DriveControl.h"
+
 const char* ssid = "iPhone (50)";
 const char* password = "rqnjj3ka";
 
+WebApp::WebApp() : server(80) {}
 
-WebApp::WebApp() : server(80) {} 
-
-void WebApp :: connectToWifi() {
+void WebApp::connectToWifi() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -16,49 +19,25 @@ void WebApp :: connectToWifi() {
   }
   Serial.println("\nConnected! IP: "); 
   Serial.println(WiFi.localIP());
-
   server.begin();
 }
 
-void WebApp :: sendServoCommand(Servo& servo, Servo& esc) {
+void WebApp::serveClient(DriveControl& controller, bool pathClear) {
   WiFiClient client = server.accept();
-  
-  if (client) {
-    String request = client.readStringUntil('\r');
-    delay(10);
-    client.flush();
-    
-    // Process commands
-    if (request.indexOf("/set?val=") != -1) {
-      int val = request.substring(request.indexOf("=")+1).toInt();
-      
-      if (val >= 1000 && val <= 2000) {
-        // Check if switching to reverse (1350)
-        if (val < 1500) {
-          esc.writeMicroseconds(1500);      // Neutral first (safety)
-          delay(300);                      // Pause for ESC
-          
-          esc.writeMicroseconds(val);       // 1st reverse command
-          delay(300);                      // Tiny delay (adjust as needed)
-          esc.writeMicroseconds(val);       // 2nd reverse command (double-tap)
-          
-          Serial.println("DOUBLE-SENT REVERSE: " + String(val));
-        } 
-        else {
-          esc.writeMicroseconds(val);       // Forward or neutral (normal)
-          Serial.println("Motor: " + String(val));
-        }
-      }
-    }
-    else if (request.indexOf("/set?val2=") != -1) {
-      int val = request.substring(request.indexOf("=")+1).toInt();
-      if (val >= 1000 && val <= 2000) {
-        servo.writeMicroseconds(val);
-        Serial.println("Steering: " + String(val));
-      }
-    }
-    webInterface(client);
+  if (!client) return;
+
+  String request = client.readStringUntil('\n');
+  client.flush();
+
+  if (request.indexOf("/set?val=") != -1) {
+    int val = request.substring(request.indexOf("=")+1).toInt();
+    controller.handleDriveCommand(val, pathClear);
+  } 
+  else if (request.indexOf("/set?val2=") != -1) {
+    int val = request.substring(request.indexOf("=")+1).toInt();
+    controller.handleSteeringCommand(val);
   }
+  webInterface(client);
 }
 
 void WebApp :: webInterface(WiFiClient& client) {
@@ -69,6 +48,7 @@ void WebApp :: webInterface(WiFiClient& client) {
 
     client.println(R"=====(
     <script>
+    let pathBlocked = false;
       // Track active states
       const controls = {
         forward: { active: false, url: '/set?val=1600', stopUrl: '/set?val=1500', element: null },
@@ -93,6 +73,10 @@ void WebApp :: webInterface(WiFiClient& client) {
       // Button handlers
       function startControl(control) {
         if (!control.active) {
+          if (pathBlocked && control === controls.forward) {
+            console.log("Blocked: Ignoring forward input");
+            return; 
+          }
           control.active = true;
           if (control.element) control.element.classList.add('active');
           sendCommand(control.url);

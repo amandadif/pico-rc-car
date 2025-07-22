@@ -3,12 +3,14 @@
 #include <Servo.h>
 #include "WebApp.h"
 #include "StepMotor.h"
+#include "DriveControl.h"
 
 WebApp web;
-UltrasonicSensor distanceSensor;
 Servo servo;  // Steering
 Servo esc;      // Motor
 StepMotor stepMotor;
+DriveControl driveController(esc, servo);
+UltrasonicSensor US;
 
 bool pathClear;
 
@@ -17,7 +19,7 @@ void setup() {
   Serial.begin(115200);
 
   //Assign pins
-  servo.attach(28);
+  servo.attach(14);
   esc.attach(15);
 
   //Connect WiFi
@@ -31,12 +33,11 @@ void setup() {
 }
 
 void loop() {
-  //Listen and send commands through the web app
-  pathClear = distanceSensor.getPathClearStatus();
-
-  stepMotor.moveSteps(true, 1024, 3);
-  
-  if(pathClear == true) {
-    web.sendServoCommand(servo, esc);
+  static unsigned long lastPing = 0;
+  if (millis() - lastPing > 150) {
+    pathClear = US.getPathClearStatus();
+    lastPing = millis();
   }
+  driveController.emergencyOverride(pathClear);
+  web.serveClient(driveController, pathClear);
 }
