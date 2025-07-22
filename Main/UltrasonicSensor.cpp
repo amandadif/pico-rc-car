@@ -3,6 +3,7 @@
 #include "PathStatusLED.h"
 
 PathStatusLED LEDindicator;
+float lastDistance;
 UltrasonicSensor::UltrasonicSensor()
   : sonar(trigPin, echoPin, maxDistance) // initialize NewPing object
 {
@@ -12,7 +13,6 @@ UltrasonicSensor::UltrasonicSensor()
 bool UltrasonicSensor::getPathClearStatus() {
   bool pathClearStatus;
   float distance = sonar.ping_cm(); // returns distance in cm, non-blocking
-
   if (distance == 0) {
     pathClearStatus = false;
     return pathClearStatus;
@@ -27,10 +27,12 @@ bool UltrasonicSensor::getPathClearStatus() {
     pathClearStatus = true;
   }
 
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
+  if(distance != lastDistance){
+    Serial.print("Distance: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+  }
+  lastDistance = distance;
   LEDindicator.activateStatusLED(pathClearStatus);
   return pathClearStatus;
 }
