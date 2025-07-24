@@ -1,9 +1,11 @@
 #include <Arduino.h>
 #include "UltrasonicSensor.h"
 #include "PathStatusLED.h"
+#define STOP_DISTANCE 50
 
 PathStatusLED LEDindicator;
 float lastDistance;
+
 UltrasonicSensor::UltrasonicSensor()
   : sonar(trigPin, echoPin, maxDistance) // initialize NewPing object
 {
@@ -17,7 +19,7 @@ bool UltrasonicSensor::getPathClearStatus() {
     pathClearStatus = false;
     return pathClearStatus;
   }
-  else if(distance <= 30) {
+  else if(distance <= STOP_DISTANCE) {
     Serial.println("STOP");
     pathClearStatus = false;
     LEDindicator.activateStatusLED(pathClearStatus);
@@ -28,9 +30,9 @@ bool UltrasonicSensor::getPathClearStatus() {
   }
 
   if(distance != lastDistance){
-    Serial.print("Distance: ");
-    Serial.print(distance);
-    Serial.println(" cm");
+    //Serial.print("Distance: ");
+    //Serial.print(distance);
+    //Serial.println(" cm");
   }
   lastDistance = distance;
   LEDindicator.activateStatusLED(pathClearStatus);

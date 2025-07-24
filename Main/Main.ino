@@ -13,11 +13,13 @@ DriveControl driveController(esc, servo);
 UltrasonicSensor US;
 
 bool pathClear;
+int lastPrint;
 
 void setup() {
   //Allow for serial read- 115200 baud
   Serial.begin(115200);
 
+  pinMode(18, INPUT);
   //Assign pins
   servo.attach(14);
   esc.attach(15);
@@ -33,6 +35,11 @@ void setup() {
 }
 
 void loop() {
+  if(digitalRead(18) != lastPrint) {
+    Serial.print(digitalRead(18));
+    lastPrint = digitalRead(18);
+  }
+  else{}
   static unsigned long lastPing = 0;
   if (millis() - lastPing > 150) {
     pathClear = US.getPathClearStatus();
