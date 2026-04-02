@@ -1,18 +1,15 @@
+#include <cstdlib>
 #include <WiFi.h>
 #include "WebApp.h"
 #include <Servo.h>
-
-
+#include "arduino_secrets.h"
 #include "WebApp.h"
 #include "DriveControl.h"
-
-const char* ssid = "iPhone (50)";
-const char* password = "rqnjj3ka";
 
 WebApp::WebApp() : server(80) {}
 
 void WebApp::connectToWifi() {
-  WiFi.begin(ssid, password);
+  WiFi.begin(SSID, HS_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
